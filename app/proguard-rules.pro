@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- Offline map (mapsforge vector rendering) ---
+# mapsforge renders map files from local storage; keep its classes to avoid R8
+# removing renderer internals that are accessed from our bridge code
+-keep class org.mapsforge.** { *; }
+-dontwarn org.mapsforge.**
+-dontwarn com.caverock.androidsvg.**
+
+# osmdroid: keep tile provider internals accessed via our custom providers
+-keep class org.osmdroid.tileprovider.modules.** { *; }
+-dontwarn org.osmdroid.**

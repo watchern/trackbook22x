@@ -20,6 +20,22 @@
 
     </org.osmdroid.views.MapView>
 
+    <!-- OSM COPYRIGHT ATTRIBUTION (required by the ODbL license) -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/map_attribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:alpha="0.7"
+        android:background="@color/default_white_85percent"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/attribution_osm_short"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="@color/text_default" />
+
     <!-- BOTTOM SHEET -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/statistics_sheet"

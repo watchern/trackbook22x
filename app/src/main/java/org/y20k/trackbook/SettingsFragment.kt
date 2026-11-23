@@ -27,6 +27,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.navigation.fragment.findNavController
 import androidx.preference.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -109,6 +110,16 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             return@setOnPreferenceClickListener true
         }
 
+        // set up "Offline Map" preference - opens the map management screen
+        val preferenceOfflineMap: Preference = Preference(activity as Context)
+        preferenceOfflineMap.title = getString(R.string.pref_offline_map_title)
+        preferenceOfflineMap.setIcon(R.drawable.ic_compass_needle_black_24dp)
+        preferenceOfflineMap.summary = getString(R.string.pref_offline_map_summary)
+        preferenceOfflineMap.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.action_settings_fragment_to_offline_maps_fragment)
+            return@setOnPreferenceClickListener true
+        }
+
         // set up "Recording Accuracy" preference
         val preferenceRecordingAccuracy: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
         preferenceRecordingAccuracy.title = getString(R.string.pref_recording_accuracy_title)
@@ -180,6 +191,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         val preferenceCategoryMaintenance: PreferenceCategory = PreferenceCategory(activity as Context)
         preferenceCategoryMaintenance.title = getString(R.string.pref_maintenance_title)
         preferenceCategoryMaintenance.contains(preferenceDeleteNonStarred)
+        preferenceCategoryMaintenance.contains(preferenceOfflineMap)
 
         val preferenceCategoryAdvanced: PreferenceCategory = PreferenceCategory(activity as Context)
         preferenceCategoryAdvanced.title = getString(R.string.pref_advanced_title)
@@ -199,6 +211,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceThemeSelection)
         screen.addPreference(preferenceCategoryMaintenance)
         screen.addPreference(preferenceDeleteNonStarred)
+        screen.addPreference(preferenceOfflineMap)
         screen.addPreference(preferenceCategoryAdvanced)
         screen.addPreference(preferenceRecordingAccuracy)
 //        screen.addPreference(preferenceAltitudeSmoothingValue)

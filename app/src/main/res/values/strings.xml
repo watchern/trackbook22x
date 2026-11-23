@@ -133,4 +133,33 @@
     <string name="sample_text_default_total_distance" translatable="false">6357.23 km</string>
     <string name="sample_text_default_live_statistics_distance" translatable="false">23.0 km</string>
     <string name="sample_text_default_live_statistics_duration" translatable="false">5:23</string>
+
+    <!-- OFFLINE MAP (Nanjing / Jiangsu) -->
+    <string name="pref_offline_map_title">Offline Map Management</string>
+    <string name="pref_offline_map_summary">Download, check status and delete the offline map for the Nanjing area</string>
+    <string name="offline_map_management_title">Offline Map</string>
+    <string name="offline_map_region_info">Jiangsu Province incl. Nanjing • vector map (mapsforge format) • WGS84 • rendered from OpenStreetMap data, works fully offline</string>
+    <string name="offline_map_status_not_downloaded">Offline map not downloaded</string>
+    <string name="offline_map_status_downloading">Downloading … %1$d%%</string>
+    <string name="offline_map_status_preparing">Preparing download …</string>
+    <string name="offline_map_status_paused">Download paused - resume available</string>
+    <string name="offline_map_status_installed">Installed (%1$s)</string>
+    <string name="offline_map_button_download">Download Offline Map</string>
+    <string name="offline_map_button_resume">Resume Download</string>
+    <string name="offline_map_button_pause">Pause Download</string>
+    <string name="offline_map_button_delete">Delete Offline Map</string>
+    <string name="offline_map_button_open_map">Open Map</string>
+    <string name="offline_map_button_import_bundled">Use Bundled Map (Debug)</string>
+    <string name="offline_map_delete_confirmation_message">Delete the downloaded offline map from this device?</string>
+    <string name="offline_map_delete_confirmation_yes">Delete</string>
+    <string name="snackbar_message_offline_map_missing">No offline map installed - the map stays empty. Recording tracks still works.</string>
+    <string name="snackbar_message_offline_map_action">Download</string>
+    <string name="offline_map_notification_channel_name">Offline Map Download</string>
+    <string name="offline_map_notification_title">Offline Map</string>
+    <string name="offline_map_notification_downloading">Downloading offline map …</string>
+    <string name="offline_map_notification_complete">Offline map downloaded successfully.</string>
+    <string name="offline_map_notification_failed">Offline map download failed.</string>
+    <string name="offline_map_attribution" translatable="false">(c) OpenStreetMap contributors • Map data from mapsforge.de</string>
+    <!-- OSM attribution (must not be translated or removed) -->
+    <string name="attribution_osm_short" translatable="false">(c) OpenStreetMap contributors</string>
 </resources>

@@ -37,7 +37,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textview.MaterialTextView
 import org.osmdroid.api.IMapController
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
@@ -79,6 +78,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
     private val liveStatisticsDurationOutlineView: MaterialTextView
     private val useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
     private var locationErrorBar: Snackbar
+    private var offlineMapBar: Snackbar
     private var controller: IMapController
     private var zoomLevel: Double
 
@@ -98,11 +98,15 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         liveStatisticsDurationView = rootView.findViewById(R.id.live_statistics_duration)
         liveStatisticsDurationOutlineView = rootView.findViewById(R.id.live_statistics_duration_outline)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
+        offlineMapBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
         // basic map setup
         controller = mapView.controller
         mapView.isTilesScaledToDpi = true
-        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        // force offline mode: never request map tiles from the network
+        mapView.setUseDataConnection(false)
+        // apply the offline map (jiangsu.map / nanjing.mbtiles) - falls back to an empty tile source
+        OfflineMapHelper.applyOfflineTileProvider(context, mapView)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         zoomLevel = PreferencesHelper.loadZoomLevel()
@@ -266,6 +270,27 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
             if (!locationErrorBar.isShown) locationErrorBar.show()
         } else {
             if (locationErrorBar.isShown) locationErrorBar.dismiss()
+        }
+    }
+
+
+    /* Re-applies the offline map tile provider - called when the offline map state changed (download / delete) */
+    fun refreshTileSource() {
+        OfflineMapHelper.applyOfflineTileProvider(context, mapView)
+    }
+
+
+    /* Toggles the snackbar that asks the user to download the offline map - action navigates to the map management screen */
+    fun toggleOfflineMapBar(offlineMapInstalled: Boolean, navigateToMapsManagement: () -> Unit) {
+        if (!offlineMapInstalled) {
+            // CASE: no offline map installed - guide the user to the map management screen
+            offlineMapBar.setText(R.string.snackbar_message_offline_map_missing)
+            offlineMapBar.setAction(R.string.snackbar_message_offline_map_action) {
+                navigateToMapsManagement()
+            }
+            if (!offlineMapBar.isShown) offlineMapBar.show()
+        } else {
+            if (offlineMapBar.isShown) offlineMapBar.dismiss()
         }
     }
 

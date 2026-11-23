@@ -123,4 +123,30 @@
     <string name="descr_statistics_sheet_delete_button">删除轨迹按钮</string>
     <string name="descr_statistics_sheet_edit_button">编辑轨迹按钮</string>
     <string name="descr_statistics_sheet_save_button">保存为 GPX 按钮</string>
+
+    <!-- 离线地图（南京 / 江苏） -->
+    <string name="pref_offline_map_title">离线地图管理</string>
+    <string name="pref_offline_map_summary">下载、查看状态或删除南京区域离线地图</string>
+    <string name="offline_map_management_title">离线地图</string>
+    <string name="offline_map_region_info">江苏省（含南京）• 矢量地图（mapsforge 格式）• WGS84 坐标系 • 由 OpenStreetMap 数据生成，完全离线可用</string>
+    <string name="offline_map_status_not_downloaded">离线地图未下载</string>
+    <string name="offline_map_status_downloading">下载中 … %1$d%%</string>
+    <string name="offline_map_status_preparing">正在准备下载 …</string>
+    <string name="offline_map_status_paused">下载已暂停 - 可断点续传</string>
+    <string name="offline_map_status_installed">已安装（%1$s）</string>
+    <string name="offline_map_button_download">下载离线地图</string>
+    <string name="offline_map_button_resume">继续下载</string>
+    <string name="offline_map_button_pause">暂停下载</string>
+    <string name="offline_map_button_delete">删除离线地图</string>
+    <string name="offline_map_button_open_map">打开地图</string>
+    <string name="offline_map_button_import_bundled">使用内置地图（调试）</string>
+    <string name="offline_map_delete_confirmation_message">确定删除已下载的离线地图吗？</string>
+    <string name="offline_map_delete_confirmation_yes">删除</string>
+    <string name="snackbar_message_offline_map_missing">尚未下载离线地图，地图区域将显示为空白；轨迹记录不受影响。</string>
+    <string name="snackbar_message_offline_map_action">去下载</string>
+    <string name="offline_map_notification_channel_name">离线地图下载</string>
+    <string name="offline_map_notification_title">离线地图</string>
+    <string name="offline_map_notification_downloading">正在下载离线地图 …</string>
+    <string name="offline_map_notification_complete">离线地图下载完成。</string>
+    <string name="offline_map_notification_failed">离线地图下载失败。</string>
 </resources>

@@ -20,6 +20,8 @@ package org.y20k.trackbook
 
 import android.app.Application
 import com.google.android.material.color.DynamicColors
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory
+import org.osmdroid.config.Configuration
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
@@ -45,6 +47,13 @@ class Trackbook: Application() {
         initPreferences()
         // set Dark / Light theme state
         AppThemeHelper.setTheme(PreferencesHelper.loadThemeSelection())
+        // set up osmdroid: user agent + private storage path (tile cache defaults to basePath/tiles)
+        Configuration.getInstance().apply {
+            userAgentValue = BuildConfig.APPLICATION_ID
+            osmdroidBasePath = this@Trackbook.getExternalFilesDir(null)
+        }
+        // initialize mapsforge graphics factory - required before rendering the offline map
+        AndroidGraphicFactory.createInstance(this)
     }
 
 

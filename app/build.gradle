@@ -32,11 +32,23 @@ android {
         exclude 'META-INF/*'
     }
 
+    // enable view binding (used by MapsFragment)
+    buildFeatures {
+        viewBinding true
+    }
+
+    // do not compress offline map assets - mapsforge needs random access while streaming
+    aaptOptions {
+        noCompress 'map', 'mbtiles'
+    }
+
     buildTypes {
         release {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // sign release builds in CI (GitHub Actions); falls back to the debug key when not configured
+            signingConfig signingConfigs.debug
         }
         debug {
             // Comment out the below lines if you do not need to test resource shrinking
@@ -47,6 +59,18 @@ android {
 //                    'proguard-rules.pro'
         }
     }
+}
+
+// optional release signing - configured via environment variables in CI (see .github/workflows/)
+def releaseKeystoreFile = System.getenv("TRACKBOOK_RELEASE_STORE_FILE")
+if (releaseKeystoreFile != null && !releaseKeystoreFile.trim().isEmpty() && file(releaseKeystoreFile).exists()) {
+    android.signingConfigs.create("ciRelease") {
+        storeFile file(releaseKeystoreFile)
+        storePassword System.getenv("TRACKBOOK_RELEASE_STORE_PASSWORD")
+        keyAlias System.getenv("TRACKBOOK_RELEASE_KEY_ALIAS")
+        keyPassword System.getenv("TRACKBOOK_RELEASE_KEY_PASSWORD")
+    }
+    android.buildTypes.release.signingConfig = android.signingConfigs.ciRelease
 }
 
 dependencies {
@@ -62,6 +86,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.1'
     implementation "androidx.navigation:navigation-fragment-ktx:$navigationVersion"
     implementation "androidx.navigation:navigation-ui-ktx:$navigationVersion"
     implementation 'androidx.preference:preference-ktx:1.2.0'
@@ -72,4 +97,12 @@ dependencies {
 
     // OpenStreetMap
     implementation 'org.osmdroid:osmdroid-android:6.1.11'
+
+    // Offline vector maps (mapsforge format, v5) - renders jiangsu.map locally, no network
+    def mapsforgeVersion = "0.20.0"
+    implementation "org.mapsforge:mapsforge-map-android:$mapsforgeVersion"
+    implementation "org.mapsforge:mapsforge-themes:$mapsforgeVersion"
+
+    // Background download of the offline map
+    implementation 'androidx.work:work-runtime-ktx:2.7.1'
 }

@@ -16,14 +16,34 @@
             app:destination="@id/track_fragment"
             app:popUpTo="@+id/map_fragment"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_map_fragment_to_offline_maps_fragment"
+            app:destination="@id/offline_maps_fragment" />
         <!-- popUpTo & popUpToInclusive ensure that tapping on Map in bottom navigation opens the map -->
+    </fragment>
+
+    <!-- OFFLINE MAPS (MAP MANAGEMENT) -->
+    <fragment
+        android:id="@+id/offline_maps_fragment"
+        android:name="org.y20k.trackbook.MapsFragment"
+        android:label="Offline Maps"
+        tools:layout="@layout/fragment_maps">
+        <action
+            android:id="@+id/action_offline_maps_fragment_to_map_fragment"
+            app:destination="@id/map_fragment"
+            app:popUpTo="@+id/offline_maps_fragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <!-- SETTINGS -->
     <fragment
         android:id="@+id/settings_fragment"
         android:name="org.y20k.trackbook.SettingsFragment"
-        android:label="Settings"/>
+        android:label="Settings">
+        <action
+            android:id="@+id/action_settings_fragment_to_offline_maps_fragment"
+            app:destination="@id/offline_maps_fragment" />
+    </fragment>
 
     <!-- TRACKS (LIST OF TRACKS) -->
     <fragment

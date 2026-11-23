@@ -46,6 +46,7 @@ object Keys {
     // preferences
     const val PREF_ONE_TIME_HOUSEKEEPING_NECESSARY = "ONE_TIME_HOUSEKEEPING_NECESSARY_VERSIONCODE_38" // increment to current app version code to trigger housekeeping that runs only once
     const val PREF_THEME_SELECTION: String= "prefThemeSelection"
+    const val PREF_OFFLINE_MAP_UPDATED_AT: String = "prefOfflineMapUpdatedAt" // timestamp of last offline map install / delete - map fragments listen for changes
     const val PREF_CURRENT_BEST_LOCATION_PROVIDER: String = "prefCurrentBestLocationProvider"
     const val PREF_CURRENT_BEST_LOCATION_LATITUDE: String = "prefCurrentBestLocationLatitude"
     const val PREF_CURRENT_BEST_LOCATION_LONGITUDE: String = "prefCurrentBestLocationLongitude"
@@ -74,6 +75,7 @@ object Keys {
     const val DIALOG_DELETE_TRACK: Int = 1
     const val DIALOG_DELETE_NON_STARRED: Int = 2
     const val DIALOG_DELETE_CURRENT_RECORDING: Int = 3
+    const val DIALOG_DELETE_OFFLINE_MAP: Int = 4
 
     // dialog results
     const val DIALOG_EMPTY_PAYLOAD_STRING: String = ""
@@ -83,6 +85,29 @@ object Keys {
     const val FOLDER_TEMP: String  = "temp"
     const val FOLDER_TRACKS: String = "tracks"
     const val FOLDER_GPX: String = "gpx"
+    const val FOLDER_OFFLINE_MAPS: String = "osmdroid"  // --> getExternalFilesDir("osmdroid")
+
+    // offline map (Nanjing / Jiangsu region, WGS84, rendered from OSM data)
+    const val OFFLINE_MAP_MAPFORGE_FILE_NAME: String = "jiangsu.map"    // mapsforge vector map (v5 format, covers Nanjing)
+    const val OFFLINE_MAP_MBTILES_FILE_NAME: String = "nanjing.mbtiles" // optional raster fallback (MBTiles z12-15)
+    const val OFFLINE_MAP_ASSET_MAPFORGE_PATH: String = "mbtiles/jiangsu.map" // bundled debug map, see docs/OFFLINE_MAP.md
+    const val OFFLINE_MAP_PART_SUFFIX: String = ".part"                 // suffix of a partially downloaded file
+    const val OFFLINE_MAP_DOWNLOAD_URL: String = "https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/asia/china/jiangsu.map"
+    const val OFFLINE_MAP_DOWNLOAD_MAX_RETRIES: Int = 5
+    const val OFFLINE_MAP_MIN_VALID_BYTES: Long = 1024L * 1024L         // files smaller than 1 MB are considered broken
+    const val OFFLINE_MAP_MBTILES_MIN_ZOOM: Int = 12
+    const val OFFLINE_MAP_MBTILES_MAX_ZOOM: Int = 15
+    const val OFFLINE_MAP_DOWNLOAD_WORK_NAME: String = "org.y20k.trackbook.offline.map.download"
+    const val OFFLINE_MAP_NOTIFICATION_ID: Int = 2
+    const val OFFLINE_MAP_NOTIFICATION_CHANNEL: String = "notificationChannelOfflineMapDownload"
+    const val OFFLINE_MAP_MAX_ZOOM: Int = 20                            // mapsforge vector maps render up to this level
+
+    // offline map - work manager args / progress
+    const val ARG_OFFLINE_MAP_URL: String = "ArgOfflineMapUrl"
+    const val ARG_OFFLINE_MAP_FILE_NAME: String = "ArgOfflineMapFileName"
+    const val PROGRESS_OFFLINE_MAP_PERCENT: String = "ProgressOfflineMapPercent"
+    const val PROGRESS_OFFLINE_MAP_BYTES: String = "ProgressOfflineMapBytes"
+    const val PROGRESS_OFFLINE_MAP_TOTAL: String = "ProgressOfflineMapTotal"
 
     // file names and extensions
     const val MIME_TYPE_GPX: String = "application/gpx+xml"
@@ -109,6 +134,8 @@ object Keys {
     const val IMPLAUSIBLE_TRACK_START_SPEED: Double = 250.0                     // 250 km/h
     const val DEFAULT_LATITUDE: Double = 71.172500                              // latitude Nordkapp, Norway
     const val DEFAULT_LONGITUDE: Double = 25.784444                             // longitude Nordkapp, Norway
+    const val NANJING_DEFAULT_LATITUDE: Double = 32.041500                      // latitude Nanjing downtown (Xinjiekou), China
+    const val NANJING_DEFAULT_LONGITUDE: Double = 118.784000                    // longitude Nanjing downtown (Xinjiekou), China
     const val DEFAULT_ACCURACY: Float = 300f                                    // in meters
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L

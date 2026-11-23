@@ -15,6 +15,22 @@
         android:contentDescription="@string/descr_map_current_track"
         android:visibility="visible" />
 
+    <!-- OSM COPYRIGHT ATTRIBUTION (required by the ODbL license) -->
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/map_attribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="8dp"
+        android:layout_marginBottom="4dp"
+        android:alpha="0.7"
+        android:background="@color/default_white_85percent"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:text="@string/attribution_osm_short"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="@color/text_default" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/container"
         android:layout_width="match_parent"

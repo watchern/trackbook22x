@@ -165,6 +165,18 @@ object PreferencesHelper {
 
     }
 
+
+    /* Loads the timestamp of the last offline map change (install or delete) */
+    fun loadOfflineMapUpdatedAt(): Long {
+        return sharedPreferences.getLong(Keys.PREF_OFFLINE_MAP_UPDATED_AT, 0L)
+    }
+
+
+    /* Saves the timestamp of the last offline map change (install or delete) - map fragments listen for this key */
+    fun saveOfflineMapUpdatedAt() {
+        sharedPreferences.edit { putLong(Keys.PREF_OFFLINE_MAP_UPDATED_AT, System.currentTimeMillis()) }
+    }
+
     /* Start watching for changes in shared preferences - context must implement OnSharedPreferenceChangeListener */
     fun registerPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         sharedPreferences.registerOnSharedPreferenceChangeListener(listener)

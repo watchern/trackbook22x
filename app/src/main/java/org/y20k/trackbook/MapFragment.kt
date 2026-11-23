@@ -68,6 +68,11 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         // TODO make only MapFragment's status bar transparent - see: https://gist.github.com/Dvik/a3de88d39da9d1d6d175025a56c5e797#file-viewextension-kt and https://proandroiddev.com/android-full-screen-ui-with-transparent-status-bar-ef52f3adde63
         // get current best location
         currentBestLocation = LocationHelper.getLastKnownLocation(activity as Context)
+        // default to Nanjing city center if no location is known (the offline map covers the Nanjing / Jiangsu area)
+        if (currentBestLocation.latitude == Keys.DEFAULT_LATITUDE && currentBestLocation.longitude == Keys.DEFAULT_LONGITUDE) {
+            currentBestLocation.latitude = Keys.NANJING_DEFAULT_LATITUDE
+            currentBestLocation.longitude = Keys.NANJING_DEFAULT_LONGITUDE
+        }
         // get saved tracking state
         trackingState = PreferencesHelper.loadTrackingState()
     }
@@ -108,6 +113,10 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+        // show a hint if no offline map is installed - guides the user to the map management screen
+        layout.toggleOfflineMapBar(OfflineMapHelper.isOfflineMapInstalled(activity as Context), navigateToMapsManagement = {
+            findNavController().navigate(R.id.action_map_fragment_to_offline_maps_fragment)
+        })
         // bind to TrackerService
         activity?.bindService(Intent(activity, TrackerService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
@@ -318,6 +327,15 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
                 if (activity != null) {
                     trackingState = PreferencesHelper.loadTrackingState()
                     layout.updateMainButton(trackingState)
+                }
+            }
+            Keys.PREF_OFFLINE_MAP_UPDATED_AT -> {
+                // the offline map was downloaded or deleted - switch map tiles and hide the download hint
+                if (activity != null) {
+                    layout.refreshTileSource()
+                    layout.toggleOfflineMapBar(OfflineMapHelper.isOfflineMapInstalled(activity as Context), navigateToMapsManagement = {
+                        findNavController().navigate(R.id.action_map_fragment_to_offline_maps_fragment)
+                    })
                 }
             }
         }

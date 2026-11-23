@@ -38,7 +38,6 @@ import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
@@ -111,7 +110,10 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
         controller = mapView.controller
         mapView.addMapListener(this)
         mapView.isTilesScaledToDpi = true
-        mapView.setTileSource(TileSourceFactory.MAPNIK)
+        // force offline mode: never request map tiles from the network
+        mapView.setUseDataConnection(false)
+        // apply the offline map (jiangsu.map / nanjing.mbtiles) - falls back to an empty tile source
+        OfflineMapHelper.applyOfflineTileProvider(context, mapView)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         controller.setCenter(GeoPoint(track.latitude, track.longitude))
