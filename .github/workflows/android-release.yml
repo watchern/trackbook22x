@@ -86,8 +86,10 @@ jobs:
       - name: Collect APKs
         run: |
           mkdir -p apks
-          cp app/build/outputs/apk/release/*.apk apks/ 2>/dev/null || true
-          cp app/build/outputs/apk/debug/*.apk apks/ 2>/dev/null || true
+          # name the apk after the tag (or branch), e.g. trackbook-v2.2.0-nanjing.7-release.apk
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          cp app/build/outputs/apk/release/app-release.apk "apks/trackbook-${VERSION}-release.apk" 2>/dev/null || true
+          cp app/build/outputs/apk/debug/app-debug.apk "apks/trackbook-${VERSION}-debug.apk" 2>/dev/null || true
           ls -la apks
 
       - name: Upload APK artifacts
