@@ -217,7 +217,8 @@ object OfflineMapHelper {
     }
 
 
-    /* Copies the map file bundled under assets/mbtiles/ to the offline map directory - debug aid */
+    /* Copies the map file bundled under assets/mbtiles/ to the offline map directory - runs once per install, idempotent */
+    @Synchronized
     fun installBundledMapsforgeMap(context: Context): Boolean {
         val targetFile: File = getMapsforgeFile(context)
         if (isMapsforgeMapInstalled(context)) {

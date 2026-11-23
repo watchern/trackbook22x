@@ -90,10 +90,11 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
         binding.importBundledButton.setOnClickListener { handleBundledMapImport() }
         // observe download progress
         observeDownloadWork()
-        // one time migration: move maps from the legacy private dir to the public dir (background)
+        // one time migration + automatic install of the bundled map (background, idempotent)
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 OfflineMapHelper.migrateLegacyMaps(requireContext())
+                OfflineMapHelper.installBundledMapsforgeMap(requireContext())
             }
             updateUi()
         }
@@ -106,10 +107,11 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     /* Overrides onResume from Fragment */
     override fun onResume() {
         super.onResume()
-        // re-check the storage permission (may have changed in the system settings) and migrate if needed
+        // re-check the storage permission (may have changed in the system settings), migrate and install the bundled map if needed
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 OfflineMapHelper.migrateLegacyMaps(requireContext())
+                OfflineMapHelper.installBundledMapsforgeMap(requireContext())
             }
             updateUi()
         }
@@ -268,7 +270,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
             getString(R.string.offline_map_button_download)
         }
         binding.deleteButton.isVisible = false
-        binding.importBundledButton.isVisible = BuildConfig.DEBUG
+        binding.importBundledButton.isVisible = true
     }
 
 
@@ -305,8 +307,8 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
             }
             binding.downloadButton.isVisible = true
             binding.deleteButton.isVisible = false
-            // offer the bundled map only on debug builds (see docs/OFFLINE_MAP.md)
-            binding.importBundledButton.isVisible = BuildConfig.DEBUG
+            // offer re-install of the bundled map (map ships inside the apk since v2.2.0-nanjing.9)
+            binding.importBundledButton.isVisible = true
         }
         binding.mapViewButton.isVisible = installed
         binding.mapViewButton.setOnClickListener {

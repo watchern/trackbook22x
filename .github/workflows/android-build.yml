@@ -21,6 +21,17 @@ jobs:
           distribution: temurin
           java-version: '11'
 
+      - name: Download bundled offline map
+        run: |
+          URL="https://download.mapsforge.org/maps/v5/asia/china/jiangsu.map"
+          curl -sSL --retry 3 --max-time 900 -o app/src/main/assets/mbtiles/jiangsu.map "$URL"
+          SIZE=$(stat -c%s app/src/main/assets/mbtiles/jiangsu.map)
+          echo "bundled map size: $SIZE bytes"
+          if [ "$SIZE" -lt 10000000 ]; then echo "ERROR: map file too small - download broken"; exit 1; fi
+          if ! head -c 20 app/src/main/assets/mbtiles/jiangsu.map | grep -q "mapsforge binary OSM"; then
+            echo "ERROR: invalid mapsforge magic byte"; exit 1
+          fi
+
       - name: Build debug APK
         run: |
           ./gradlew assembleDebug --stacktrace 2>&1 | tee build-debug.log

@@ -1,15 +1,16 @@
-# Bundled offline map (debug only)
+# Bundled offline map
 
-Debug builds offer a "Use Bundled Map (Debug)" button on the map management screen.
-It copies the file below into the app's private storage:
+The Jiangsu vector map (`jiangsu.map`, ~94 MB, mapsforge v5 format) ships inside the APK:
 
-    app/src/main/assets/mbtiles/jiangsu.map
+- **CI builds**: the GitHub Actions workflows download the map from
+  `https://download.mapsforge.org/maps/v5/asia/china/jiangsu.map` before building
+  (see "Download bundled offline map" step) and bundle it under this folder.
+- **Local builds**: place your own `jiangsu.map` here (same URL), or let the CI step download it.
 
-The file is NOT stored in this repository (it is ~100 MB+). To test the debug flow:
+On first use the app copies the bundled map to the active offline map directory
+(`/storage/emulated/0/trackbook/osmdroid/` once storage access is granted, the
+app-private dir otherwise) and verifies the mapsforge magic bytes. The copy is
+idempotent - it is skipped when a valid map is already installed.
 
-1. Download the Jiangsu vector map (mapsforge format v5):
-   https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/asia/china/jiangsu.map
-2. Copy it here as `jiangsu.map`.
+The in-app download button remains as an update path (see docs/OFFLINE_MAP.md).
 
-The download button in the app fetches the same file from the URL above, so bundling
-is only needed when you want to test without network access. See docs/OFFLINE_MAP.md.

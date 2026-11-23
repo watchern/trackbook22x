@@ -29,6 +29,7 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
@@ -113,10 +114,21 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        // show a hint if no offline map is installed - guides the user to the map management screen
-        layout.toggleOfflineMapBar(OfflineMapHelper.isOfflineMapInstalled(activity as Context), navigateToMapsManagement = {
-            findNavController().navigate(R.id.action_map_fragment_to_offline_maps_fragment)
-        })
+        // install the bundled offline map in the background (idempotent - no-op when a map is already installed)
+        lifecycleScope.launch {
+            val installedBefore: Boolean = OfflineMapHelper.isOfflineMapInstalled(requireContext())
+            withContext(Dispatchers.IO) {
+                OfflineMapHelper.installBundledMapsforgeMap(requireContext())
+            }
+            val installedAfter: Boolean = OfflineMapHelper.isOfflineMapInstalled(requireContext())
+            // refresh map tiles and hide the download hint if the bundled map was just installed
+            if (!installedBefore && installedAfter) {
+                layout.refreshTileSource()
+            }
+            layout.toggleOfflineMapBar(installedAfter, navigateToMapsManagement = {
+                findNavController().navigate(R.id.action_map_fragment_to_offline_maps_fragment)
+            })
+        }
         // bind to TrackerService
         activity?.bindService(Intent(activity, TrackerService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
