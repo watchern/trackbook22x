@@ -58,55 +58,71 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
 
     /* Overrides doWork from CoroutineWorker */
     override suspend fun doWork(): Result {
-        val downloadUrl: String = inputData.getString(Keys.ARG_OFFLINE_MAP_URL) ?: Keys.OFFLINE_MAP_DOWNLOAD_URL
+        val primaryUrl: String = inputData.getString(Keys.ARG_OFFLINE_MAP_URL) ?: Keys.OFFLINE_MAP_DOWNLOAD_URL
         val targetFile: File = OfflineMapHelper.getMapsforgeFile(applicationContext)
         val partFile: File = OfflineMapHelper.getMapsforgePartFile(applicationContext)
-        LogHelper.i(TAG, "Starting offline map download: $downloadUrl")
+        LogHelper.i(TAG, "Starting offline map download: $primaryUrl")
 
         // run in the foreground to survive longer downloads while the app is in the background
         try {
-            setForeground(createForegroundInfo(0L, -1L))
+            setForeground(createForegroundInfo())
         } catch (e: Exception) {
             // foreground is optional - continue without it
             LogHelper.d(TAG, "Unable to start foreground download. $e")
         }
 
-        return try {
-            val success: Boolean = withContext(Dispatchers.IO) {
-                downloadMapFile(downloadUrl, partFile)
-            }
-            if (success) {
-                // move the downloaded file into place and verify it
-                if (targetFile.exists()) targetFile.delete()
-                if (!partFile.renameTo(targetFile)) {
-                    LogHelper.e(TAG, "Unable to move downloaded map file into place.")
-                    return Result.failure()
+        // try the primary source first, then the fallback mirror
+        val downloadUrls: List<String> = listOf(primaryUrl, Keys.OFFLINE_MAP_DOWNLOAD_URL_MIRROR).distinct()
+        var lastError: IOException? = null
+        for (downloadUrl: String in downloadUrls) {
+            try {
+                val success: Boolean = withContext(Dispatchers.IO) {
+                    downloadMapFile(downloadUrl, partFile)
                 }
-                if (!OfflineMapHelper.isValidMapsforgeFile(targetFile)) {
-                    LogHelper.e(TAG, "Downloaded map file is invalid - deleting.")
-                    targetFile.delete()
-                    showResultNotification(success = false)
-                    return Result.failure()
+                if (success) {
+                    return finalizeDownload(targetFile, partFile)
+                } else {
+                    // download was cancelled - keep the partial file for resuming
+                    return Result.retry()
                 }
-                // store the update timestamp - map fragments listen for this change
-                PreferencesHelper.saveOfflineMapUpdatedAt()
-                showResultNotification(success = true)
-                LogHelper.i(TAG, "Offline map download finished: ${targetFile.absolutePath}")
-                Result.success(workDataOf(Keys.PROGRESS_OFFLINE_MAP_PERCENT to 100))
-            } else {
-                // download was cancelled - keep the partial file for resuming
-                Result.retry()
-            }
-        } catch (e: IOException) {
-            LogHelper.e(TAG, "Offline map download failed. $e")
-            if (runAttemptCount < Keys.OFFLINE_MAP_DOWNLOAD_MAX_RETRIES) {
-                // retry later with exponential backoff - the partial file is kept for resuming
-                Result.retry()
-            } else {
-                showResultNotification(success = false)
-                Result.failure()
+            } catch (e: IOException) {
+                LogHelper.e(TAG, "Offline map download failed for $downloadUrl. $e")
+                lastError = e
+                reportError(e.message ?: e.javaClass.simpleName)
+                // continue with the next mirror
             }
         }
+        // all sources failed
+        if (runAttemptCount < Keys.OFFLINE_MAP_DOWNLOAD_MAX_RETRIES) {
+            // retry later with exponential backoff - the partial file is kept for resuming
+            return Result.retry()
+        }
+        showResultNotification(success = false)
+        return Result.failure(
+            workDataOf(Keys.PROGRESS_OFFLINE_MAP_ERROR to (lastError?.message ?: lastError?.javaClass?.simpleName ?: "download failed"))
+        )
+    }
+
+
+    /* Moves the downloaded file into place and verifies it - returns the final work result */
+    private suspend fun finalizeDownload(targetFile: File, partFile: File): Result {
+        // move the downloaded file into place and verify it
+        if (targetFile.exists()) targetFile.delete()
+        if (!partFile.renameTo(targetFile)) {
+            LogHelper.e(TAG, "Unable to move downloaded map file into place.")
+            return Result.failure(workDataOf(Keys.PROGRESS_OFFLINE_MAP_ERROR to "unable to move file into place"))
+        }
+        if (!OfflineMapHelper.isValidMapsforgeFile(targetFile)) {
+            LogHelper.e(TAG, "Downloaded map file is invalid - deleting.")
+            targetFile.delete()
+            showResultNotification(success = false)
+            return Result.failure(workDataOf(Keys.PROGRESS_OFFLINE_MAP_ERROR to "downloaded file is not a valid mapsforge map"))
+        }
+        // store the update timestamp - map fragments listen for this change
+        PreferencesHelper.saveOfflineMapUpdatedAt()
+        showResultNotification(success = true)
+        LogHelper.i(TAG, "Offline map download finished: ${targetFile.absolutePath}")
+        return Result.success(workDataOf(Keys.PROGRESS_OFFLINE_MAP_PERCENT to 100))
     }
 
 
@@ -123,6 +139,8 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
             // request the remaining bytes - enables resuming after an interrupted download
             connection.setRequestProperty("Range", "bytes=$alreadyDownloaded-")
         }
+        // tell the ui we are trying to connect (may take a while on slow networks)
+        updateProgress(Keys.PHASE_CONNECTING, 0L, -1L)
         val responseCode: Int = connection.responseCode
         var resumeOffset: Long = alreadyDownloaded
         when {
@@ -140,6 +158,8 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
                 throw IOException("Unexpected HTTP response code: $responseCode")
             }
         }
+        // connection established - switch the ui from "connecting" to "downloading"
+        updateProgress(Keys.PHASE_DOWNLOADING, 0L, -1L)
 
         val contentLength: Long = connection.contentLengthLong
         val totalBytes: Long = if (contentLength >= 0L) resumeOffset + contentLength else -1L
@@ -161,7 +181,7 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
                         if (now - lastNotificationUpdate > PROGRESS_UPDATE_INTERVAL) {
                             lastNotificationUpdate = now
                             val currentBytes: Long = resumeOffset + appendedBytes
-                            updateProgress(currentBytes, totalBytes)
+                            updateProgress(Keys.PHASE_DOWNLOADING, currentBytes, totalBytes)
                         }
                         bytesRead = inputStream.read(buffer)
                     }
@@ -171,17 +191,33 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
         } finally {
             connection.disconnect()
         }
-        updateProgress(resumeOffset + appendedBytes, totalBytes)
+        updateProgress(Keys.PHASE_DOWNLOADING, resumeOffset + appendedBytes, totalBytes)
         return true
     }
 
 
+    /* Reports an error message to the ui - shown when all mirrors failed */
+    private suspend fun reportError(message: String) {
+        try {
+            setProgress(
+                workDataOf(
+                    Keys.PROGRESS_OFFLINE_MAP_PHASE to Keys.PHASE_SERVER_ERROR,
+                    Keys.PROGRESS_OFFLINE_MAP_ERROR to message
+                )
+            )
+        } catch (e: IllegalStateException) {
+            // work is no longer running - ignore
+        }
+    }
+
+
     /* Publishes the current progress to WorkManager and updates the notification */
-    private suspend fun updateProgress(currentBytes: Long, totalBytes: Long) {
+    private suspend fun updateProgress(phase: Int, currentBytes: Long, totalBytes: Long) {
         val percent: Int = if (totalBytes > 0L) ((currentBytes * 100L) / totalBytes).toInt().coerceIn(0, 99) else 0
         try {
             setProgress(
                 workDataOf(
+                    Keys.PROGRESS_OFFLINE_MAP_PHASE to phase,
                     Keys.PROGRESS_OFFLINE_MAP_PERCENT to percent,
                     Keys.PROGRESS_OFFLINE_MAP_BYTES to currentBytes,
                     Keys.PROGRESS_OFFLINE_MAP_TOTAL to totalBytes
@@ -196,14 +232,14 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
 
     /* Overrides getForegroundInfo from CoroutineWorker */
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        return createForegroundInfo(0L, -1L)
+        return createForegroundInfo()
     }
 
 
     /* Creates the foreground info with a progress notification */
-    private fun createForegroundInfo(currentBytes: Long, totalBytes: Long): ForegroundInfo {
+    private fun createForegroundInfo(): ForegroundInfo {
         createNotificationChannel()
-        val notification = buildNotification(currentBytes, totalBytes, ongoing = true)
+        val notification = buildNotification(0L, -1L, ongoing = true)
         return ForegroundInfo(Keys.OFFLINE_MAP_NOTIFICATION_ID, notification)
     }
 
@@ -282,7 +318,7 @@ class MapDownloadWorker(context: Context, workerParameters: WorkerParameters) : 
         const val HTTP_OK: Int = 200
         val HTTP_SUCCESS_RANGE: IntRange = 200..299
         const val CONNECT_TIMEOUT: Int = 15000
-        const val READ_TIMEOUT: Int = 30000
+        const val READ_TIMEOUT: Int = 60000
         const val BUFFER_SIZE: Int = 65536
         const val PROGRESS_UPDATE_INTERVAL: Long = 500L
     }

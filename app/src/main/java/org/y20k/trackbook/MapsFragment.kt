@@ -70,6 +70,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     private var _binding: FragmentMapsBinding? = null
     private val binding get() = _binding!!
     private var lastKnownWorkState: WorkInfo.State? = null
+    private var lastErrorMessage: String? = null
 
 
     /* Overrides onCreateView from Fragment */
@@ -181,8 +182,16 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
             val workInfo = workInfoList.firstOrNull()
             lastKnownWorkState = workInfo?.state
             when (workInfo?.state) {
-                WorkInfo.State.RUNNING -> showDownloading(workInfo.progress.getInt(Keys.PROGRESS_OFFLINE_MAP_PERCENT, 0))
-                WorkInfo.State.ENQUEUED -> showDownloading(0)
+                WorkInfo.State.RUNNING -> showDownloading(
+                    workInfo.progress.getInt(Keys.PROGRESS_OFFLINE_MAP_PHASE, Keys.PHASE_CONNECTING),
+                    workInfo.progress.getInt(Keys.PROGRESS_OFFLINE_MAP_PERCENT, 0),
+                    workInfo.progress.getLong(Keys.PROGRESS_OFFLINE_MAP_BYTES, 0L)
+                )
+                WorkInfo.State.ENQUEUED -> showDownloading(Keys.PHASE_CONNECTING, 0, 0L)
+                WorkInfo.State.FAILED -> {
+                    lastErrorMessage = workInfo.outputData.getString(Keys.PROGRESS_OFFLINE_MAP_ERROR)
+                    showFailed()
+                }
                 else -> updateUi()
             }
         }
@@ -191,8 +200,13 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
 
 
     /* Switches the ui to the "downloading" state */
-    private fun showDownloading(percent: Int) {
-        binding.statusText.text = if (percent > 0) getString(R.string.offline_map_status_downloading, percent) else getString(R.string.offline_map_status_preparing)
+    private fun showDownloading(phase: Int, percent: Int, currentBytes: Long) {
+        binding.statusText.text = when {
+            phase == Keys.PHASE_CONNECTING -> getString(R.string.offline_map_status_connecting)
+            percent > 0 -> getString(R.string.offline_map_status_downloading, percent)
+            currentBytes > 0L -> getString(R.string.offline_map_status_downloading_size, Formatter.formatShortFileSize(requireContext(), currentBytes))
+            else -> getString(R.string.offline_map_status_preparing)
+        }
         binding.downloadButton.isVisible = true
         binding.downloadButton.text = getString(R.string.offline_map_button_pause)
         binding.deleteButton.isVisible = false
@@ -202,9 +216,30 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     }
 
 
+    /* Switches the ui to the "failed" state - shows the reason and offers a retry */
+    private fun showFailed() {
+        binding.progressBar.isVisible = false
+        val error: String = lastErrorMessage ?: getString(R.string.offline_map_error_generic)
+        binding.statusText.text = getString(R.string.offline_map_status_failed, error)
+        binding.downloadButton.isVisible = true
+        binding.downloadButton.text = if (OfflineMapHelper.getMapsforgePartFile(requireContext()).exists()) {
+            getString(R.string.offline_map_button_resume)
+        } else {
+            getString(R.string.offline_map_button_download)
+        }
+        binding.deleteButton.isVisible = false
+        binding.importBundledButton.isVisible = BuildConfig.DEBUG
+    }
+
+
     /* Updates the ui according to the current offline map state */
     private fun updateUi() {
         val context = context ?: return
+        if (lastKnownWorkState == WorkInfo.State.FAILED) {
+            // keep showing the failure reason until the user starts a new download
+            showFailed()
+            return
+        }
         val installed: Boolean = OfflineMapHelper.isOfflineMapInstalled(context)
         val partialDownload: Boolean = OfflineMapHelper.getMapsforgePartFile(context).exists()
         val workRunning: Boolean = lastKnownWorkState == WorkInfo.State.RUNNING || lastKnownWorkState == WorkInfo.State.ENQUEUED

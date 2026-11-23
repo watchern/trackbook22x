@@ -149,4 +149,8 @@
     <string name="offline_map_notification_downloading">正在下载离线地图 …</string>
     <string name="offline_map_notification_complete">离线地图下载完成。</string>
     <string name="offline_map_notification_failed">离线地图下载失败。</string>
+    <string name="offline_map_status_connecting">正在连接服务器 …（可能需要一点时间）</string>
+    <string name="offline_map_status_downloading_size">下载中 … %1$s</string>
+    <string name="offline_map_status_failed">下载失败：%1$s。请重试，将自动切换备用镜像。</string>
+    <string name="offline_map_error_generic">网络错误</string>
 </resources>

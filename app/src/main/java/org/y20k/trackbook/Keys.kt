@@ -92,7 +92,10 @@ object Keys {
     const val OFFLINE_MAP_MBTILES_FILE_NAME: String = "nanjing.mbtiles" // optional raster fallback (MBTiles z12-15)
     const val OFFLINE_MAP_ASSET_MAPFORGE_PATH: String = "mbtiles/jiangsu.map" // bundled debug map, see docs/OFFLINE_MAP.md
     const val OFFLINE_MAP_PART_SUFFIX: String = ".part"                 // suffix of a partially downloaded file
-    const val OFFLINE_MAP_DOWNLOAD_URL: String = "https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/asia/china/jiangsu.map"
+    // primary source: mapsforge.org - reachable from China, supports range requests
+    const val OFFLINE_MAP_DOWNLOAD_URL: String = "https://download.mapsforge.org/maps/v5/asia/china/jiangsu.map"
+    // fallback mirror: German university FTP mirror - often unreachable, tried second
+    const val OFFLINE_MAP_DOWNLOAD_URL_MIRROR: String = "https://ftp-stud.hs-esslingen.de/pub/Mirrors/download.mapsforge.org/maps/v5/asia/china/jiangsu.map"
     const val OFFLINE_MAP_DOWNLOAD_MAX_RETRIES: Int = 5
     const val OFFLINE_MAP_MIN_VALID_BYTES: Long = 1024L * 1024L         // files smaller than 1 MB are considered broken
     const val OFFLINE_MAP_MBTILES_MIN_ZOOM: Int = 12
@@ -108,6 +111,12 @@ object Keys {
     const val PROGRESS_OFFLINE_MAP_PERCENT: String = "ProgressOfflineMapPercent"
     const val PROGRESS_OFFLINE_MAP_BYTES: String = "ProgressOfflineMapBytes"
     const val PROGRESS_OFFLINE_MAP_TOTAL: String = "ProgressOfflineMapTotal"
+    const val PROGRESS_OFFLINE_MAP_PHASE: String = "ProgressOfflineMapPhase"
+    const val PROGRESS_OFFLINE_MAP_ERROR: String = "ProgressOfflineMapError"
+    // progress phases
+    const val PHASE_CONNECTING: Int = 0
+    const val PHASE_DOWNLOADING: Int = 1
+    const val PHASE_SERVER_ERROR: Int = 2
 
     // file names and extensions
     const val MIME_TYPE_GPX: String = "application/gpx+xml"

@@ -162,4 +162,8 @@
     <string name="offline_map_attribution" translatable="false">(c) OpenStreetMap contributors • Map data from mapsforge.de</string>
     <!-- OSM attribution (must not be translated or removed) -->
     <string name="attribution_osm_short" translatable="false">(c) OpenStreetMap contributors</string>
+    <string name="offline_map_status_connecting">Connecting to server … (this can take a moment)</string>
+    <string name="offline_map_status_downloading_size">Downloading … %1$s</string>
+    <string name="offline_map_status_failed">Download failed: %1$s. Please retry, a fallback mirror will be used.</string>
+    <string name="offline_map_error_generic">network error</string>
 </resources>
