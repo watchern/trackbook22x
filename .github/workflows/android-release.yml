@@ -10,6 +10,8 @@ jobs:
   release:
     name: Build and publish release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,6 +53,19 @@ jobs:
           name: release-build-logs
           path: build-release.log
           if-no-files-found: warn
+
+      - name: Push build log to ci-logs branch on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "ci-log-bot"
+          git config user.email "noreply@github.com"
+          git fetch origin master
+          git checkout --detach FETCH_HEAD
+          git add build-release.log
+          git commit -m "release build log (${GITHUB_SHA})"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/ci-logs --force
 
       - name: Collect APKs
         run: |
