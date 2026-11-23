@@ -117,7 +117,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         // install the bundled offline map in the background (idempotent - no-op when a map is already installed)
         lifecycleScope.launch {
             val installedBefore: Boolean = OfflineMapHelper.isOfflineMapInstalled(requireContext())
-            withContext(Dispatchers.IO) {
+            withContext(IO) {
                 OfflineMapHelper.installBundledMapsforgeMap(requireContext())
             }
             val installedAfter: Boolean = OfflineMapHelper.isOfflineMapInstalled(requireContext())

@@ -92,7 +92,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
         observeDownloadWork()
         // one time migration + automatic install of the bundled map (background, idempotent)
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(IO) {
                 OfflineMapHelper.migrateLegacyMaps(requireContext())
                 OfflineMapHelper.installBundledMapsforgeMap(requireContext())
             }
@@ -109,7 +109,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
         super.onResume()
         // re-check the storage permission (may have changed in the system settings), migrate and install the bundled map if needed
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(IO) {
                 OfflineMapHelper.migrateLegacyMaps(requireContext())
                 OfflineMapHelper.installBundledMapsforgeMap(requireContext())
             }
