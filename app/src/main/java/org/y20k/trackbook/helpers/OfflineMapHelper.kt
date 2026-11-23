@@ -18,7 +18,12 @@
 
 package org.y20k.trackbook.helpers
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Environment
+import androidx.core.content.ContextCompat
 import org.osmdroid.tileprovider.MapTileProviderBase
 import org.osmdroid.views.MapView
 import org.y20k.trackbook.Keys
@@ -41,8 +46,36 @@ object OfflineMapHelper {
     private val MAPSFORGE_MAGIC_BYTE: String = "mapsforge binary OSM"
 
 
-    /* Returns the directory holding the offline map files - kept inside the app's private storage */
+    /* Returns true when the app may read and write the public map directory on shared storage */
+    fun hasPublicStorageAccess(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11+: "all files access" must be granted in the system settings
+            Environment.isExternalStorageManager()
+        } else {
+            // Android 8-10: classic storage permission (manifest declares requestLegacyExternalStorage for Android 10)
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+
+    /* Returns the public map directory on shared storage - /storage/emulated/0/trackbook/osmdroid */
+    private fun getPublicMapDir(): File {
+        return File(Environment.getExternalStorageDirectory(), Keys.OFFLINE_MAP_PUBLIC_DIR)
+    }
+
+
+    /* Returns the directory holding the offline map files:
+       the public directory on shared storage when storage access is granted,
+       the app's private external storage as fallback (no permission required) */
     fun getOfflineMapDir(context: Context): File {
+        if (hasPublicStorageAccess(context)) {
+            val publicDir: File = getPublicMapDir()
+            if (!publicDir.exists()) publicDir.mkdirs()
+            if (publicDir.isDirectory && publicDir.canWrite()) {
+                return publicDir
+            }
+        }
+        // fall back to the app's private external storage
         val dir: File? = context.getExternalFilesDir(Keys.FOLDER_OFFLINE_MAPS)
         if (dir != null) {
             if (!dir.exists()) dir.mkdirs()
@@ -52,6 +85,54 @@ object OfflineMapHelper {
         val internalDir = File(context.filesDir, Keys.FOLDER_OFFLINE_MAPS)
         if (!internalDir.exists()) internalDir.mkdirs()
         return internalDir
+    }
+
+
+    /* Moves offline map files from the legacy app-private directory to the public directory - one time migration */
+    fun migrateLegacyMaps(context: Context): Boolean {
+        if (!hasPublicStorageAccess(context)) return false
+        val legacyDir: File = context.getExternalFilesDir(Keys.FOLDER_OFFLINE_MAPS) ?: return false
+        if (!legacyDir.isDirectory) return false
+        val targetDir: File = getPublicMapDir()
+        var migrated: Boolean = false
+        val fileNames: List<String> = listOf(
+            Keys.OFFLINE_MAP_MAPFORGE_FILE_NAME,
+            Keys.OFFLINE_MAP_MAPFORGE_FILE_NAME + Keys.OFFLINE_MAP_PART_SUFFIX,
+            Keys.OFFLINE_MAP_MBTILES_FILE_NAME
+        )
+        for (name: String in fileNames) {
+            val source: File = File(legacyDir, name)
+            val target: File = File(targetDir, name)
+            if (source.exists() && !target.exists()) {
+                if (!targetDir.exists()) targetDir.mkdirs()
+                migrated = migrated or moveFile(source, target)
+            }
+        }
+        if (migrated) {
+            PreferencesHelper.saveOfflineMapUpdatedAt()
+            LogHelper.i(TAG, "Offline maps migrated to ${targetDir.absolutePath}")
+        }
+        return migrated
+    }
+
+
+    /* Moves a file, falling back to copy + delete when rename fails across mount points */
+    private fun moveFile(source: File, target: File): Boolean {
+        if (source.renameTo(target)) {
+            return true
+        }
+        return try {
+            source.inputStream().use { inputStream ->
+                FileOutputStream(target).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            source.delete()
+        } catch (e: IOException) {
+            LogHelper.w(TAG, "Unable to move ${source.absolutePath} to ${target.absolutePath}. $e")
+            if (target.exists()) target.delete()
+            false
+        }
     }
 
 

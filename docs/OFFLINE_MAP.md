@@ -12,7 +12,7 @@ Trackbook（v2.x）默认使用 osmdroid 在线瓦片（MAPNIK）。本分支将
 | 坐标系 | WGS84，无 GCJ-02 偏移 |
 | 缩放级别 | 0–20 全级别矢量渲染（比预生成栅格 MBTiles 更灵活） |
 | 版权 | © OpenStreetMap contributors（地图上与地图管理页均有署名，请勿移除） |
-| 运行时位置 | `getExternalFilesDir("osmdroid")/jiangsu.map`（应用私有目录，Android 8–14 无需存储权限） |
+| 运行时位置 | `/storage/emulated/0/trackbook/osmdroid/jiangsu.map`（公共目录，需"所有文件访问"权限；未授权时回退应用私有目录 `getExternalFilesDir("osmdroid")`，卸载 App 后公共目录中的地图保留） |
 | 可选备选 | `getExternalFilesDir("osmdroid")/nanjing.mbtiles`（MBTiles 栅格，z12–15，存在时作为补充图层） |
 
 ## 二、技术方案
@@ -87,8 +87,10 @@ implementation 'org.osmdroid:osmdroid-android:6.1.11'
 
 ## 六、兼容性与约束说明
 
-* Android 8–14（minSdk 25 / targetSdk 32）：地图文件放在应用私有目录（`getExternalFilesDir`），
-  不需要任何存储权限；Scoped Storage 无影响。
+* Android 8–14（minSdk 25 / targetSdk 32）：地图默认存公共目录 `/storage/emulated/0/trackbook/osmdroid/`。
+  Android 11+ 需要"所有文件访问"权限（地图管理页内引导跳系统设置授权）；Android 10 走
+  `requestLegacyExternalStorage` + 存储运行时权限；Android 8–9 走运行时权限。未授权时自动回退
+  应用私有目录（`getExternalFilesDir`，零权限可用），授权后已下载的地图自动迁移到公共目录。
 * 深色模式沿用原有 `INVERT_COLORS` 滤镜，对矢量渲染同样生效。
 * 下载任务有 NetworkType.CONNECTED 约束与指数退避；用户可在管理页暂停（取消任务），
   之后"继续下载"从 `.part` 文件断点续传。

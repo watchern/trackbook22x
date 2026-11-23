@@ -19,13 +19,18 @@
 package org.y20k.trackbook
 
 import YesNoDialog
+import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.format.Formatter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -85,6 +90,13 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
         binding.importBundledButton.setOnClickListener { handleBundledMapImport() }
         // observe download progress
         observeDownloadWork()
+        // one time migration: move maps from the legacy private dir to the public dir (background)
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                OfflineMapHelper.migrateLegacyMaps(requireContext())
+            }
+            updateUi()
+        }
         // fill the ui with the current state
         updateUi()
         return binding.root
@@ -94,7 +106,13 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     /* Overrides onResume from Fragment */
     override fun onResume() {
         super.onResume()
-        updateUi()
+        // re-check the storage permission (may have changed in the system settings) and migrate if needed
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                OfflineMapHelper.migrateLegacyMaps(requireContext())
+            }
+            updateUi()
+        }
     }
 
 
@@ -138,14 +156,34 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     }
 
 
-    /* Handles the download button - requests the notification permission on Android 13+ if needed */
+    /* Handles the download button - requires public storage access first, then the notification permission on Android 13+ */
     private fun handleDownloadButton() {
+        if (!OfflineMapHelper.hasPublicStorageAccess(requireContext())) {
+            // storage access missing - the map must be downloadable to the public directory
+            launchStoragePermissionFlow()
+            return
+        }
         // Build.VERSION_CODES.TIRAMISU and Manifest.permission.POST_NOTIFICATIONS require compileSdk 33+ - use literals (see Keys)
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(requireContext(), NOTIFICATION_PERMISSION) == PackageManager.PERMISSION_DENIED) {
             // ask for the notification permission first - the download continues afterwards via the observer
             requestNotificationPermissionLauncher.launch(NOTIFICATION_PERMISSION)
         } else {
             startDownload()
+        }
+    }
+
+
+    /* Opens the system flow to grant storage access (all files access on Android 11+, runtime permission below) */
+    private fun launchStoragePermissionFlow() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + requireContext().packageName))
+                startActivity(intent)
+            } catch (e: Exception) {
+                startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+            }
+        } else {
+            requestStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
     }
 
@@ -201,6 +239,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
 
     /* Switches the ui to the "downloading" state */
     private fun showDownloading(phase: Int, percent: Int, currentBytes: Long) {
+        updatePermissionUi()
         binding.statusText.text = when {
             phase == Keys.PHASE_CONNECTING -> getString(R.string.offline_map_status_connecting)
             percent > 0 -> getString(R.string.offline_map_status_downloading, percent)
@@ -218,6 +257,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
 
     /* Switches the ui to the "failed" state - shows the reason and offers a retry */
     private fun showFailed() {
+        updatePermissionUi()
         binding.progressBar.isVisible = false
         val error: String = lastErrorMessage ?: getString(R.string.offline_map_error_generic)
         binding.statusText.text = getString(R.string.offline_map_status_failed, error)
@@ -235,6 +275,7 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     /* Updates the ui according to the current offline map state */
     private fun updateUi() {
         val context = context ?: return
+        updatePermissionUi()
         if (lastKnownWorkState == WorkInfo.State.FAILED) {
             // keep showing the failure reason until the user starts a new download
             showFailed()
@@ -276,6 +317,16 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
     }
 
 
+    /* Shows or hides the storage permission banner and wires its grant button */
+    private fun updatePermissionUi() {
+        val granted: Boolean = OfflineMapHelper.hasPublicStorageAccess(requireContext())
+        binding.permissionRow.isVisible = !granted
+        if (!granted) {
+            binding.permissionButton.setOnClickListener { launchStoragePermissionFlow() }
+        }
+    }
+
+
     /* Registers the permission launcher for the notification permission (Android 13+) */
     private val requestNotificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
         if (isGranted) {
@@ -285,6 +336,19 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
         }
         // start the download regardless of the notification permission
         startDownload()
+    }
+
+
+    /* Registers the permission launcher for the storage permission (Android 10 and below) */
+    private val requestStoragePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+            LogHelper.i(TAG, "Storage permission granted.")
+            // continue with the download the user originally started
+            startDownload()
+        } else {
+            LogHelper.i(TAG, "Storage permission NOT granted.")
+            Toast.makeText(requireContext(), R.string.offline_map_permission_denied_toast, Toast.LENGTH_LONG).show()
+        }
     }
 
 }

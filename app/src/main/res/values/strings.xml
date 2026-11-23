@@ -166,4 +166,7 @@
     <string name="offline_map_status_downloading_size">Downloading … %1$s</string>
     <string name="offline_map_status_failed">Download failed: %1$s. Please retry, a fallback mirror will be used.</string>
     <string name="offline_map_error_generic">network error</string>
+    <string name="offline_map_permission_missing_summary">Maps are saved to the shared folder /storage/emulated/0/trackbook/osmdroid/ and are kept when the app is uninstalled. Trackbook needs the "All files access" permission to download and read maps there.</string>
+    <string name="offline_map_permission_grant">Grant Storage Access</string>
+    <string name="offline_map_permission_denied_toast">Storage access is required to download the offline map.</string>
 </resources>

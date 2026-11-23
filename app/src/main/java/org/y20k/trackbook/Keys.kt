@@ -85,7 +85,8 @@ object Keys {
     const val FOLDER_TEMP: String  = "temp"
     const val FOLDER_TRACKS: String = "tracks"
     const val FOLDER_GPX: String = "gpx"
-    const val FOLDER_OFFLINE_MAPS: String = "osmdroid"  // --> getExternalFilesDir("osmdroid")
+    const val FOLDER_OFFLINE_MAPS: String = "osmdroid"  // --> getExternalFilesDir("osmdroid"), legacy private fallback dir
+    const val OFFLINE_MAP_PUBLIC_DIR: String = "trackbook/osmdroid"  // --> /storage/emulated/0/trackbook/osmdroid, requires "all files access"
 
     // offline map (Nanjing / Jiangsu region, WGS84, rendered from OSM data)
     const val OFFLINE_MAP_MAPFORGE_FILE_NAME: String = "jiangsu.map"    // mapsforge vector map (v5 format, covers Nanjing)

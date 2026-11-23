@@ -153,4 +153,7 @@
     <string name="offline_map_status_downloading_size">下载中 … %1$s</string>
     <string name="offline_map_status_failed">下载失败：%1$s。请重试，将自动切换备用镜像。</string>
     <string name="offline_map_error_generic">网络错误</string>
+    <string name="offline_map_permission_missing_summary">离线地图将保存到公共目录 /storage/emulated/0/trackbook/osmdroid/（卸载应用后保留）。需要授予“所有文件访问”权限，App 才能在该目录下载和读取地图。</string>
+    <string name="offline_map_permission_grant">去授权</string>
+    <string name="offline_map_permission_denied_toast">下载离线地图需要先授予存储访问权限。</string>
 </resources>

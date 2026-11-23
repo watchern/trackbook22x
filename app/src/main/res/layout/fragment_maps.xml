@@ -61,8 +61,33 @@
                     android:layout_marginTop="8dp"
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:alpha="0.6"
-                    tools:text="/storage/emulated/0/Android/data/org.y20k.trackbook/files/osmdroid/jiangsu.map"
+                    tools:text="/storage/emulated/0/trackbook/osmdroid/jiangsu.map"
                     xmlns:tools="http://schemas.android.com/tools" />
+
+                <!-- STORAGE PERMISSION BANNER (shown when public storage access is missing) -->
+                <LinearLayout
+                    android:id="@+id/permission_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/permission_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:text="@string/offline_map_permission_missing_summary" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/permission_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/offline_map_permission_grant" />
+
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
