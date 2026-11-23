@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,7 +66,22 @@ jobs:
           git checkout --detach FETCH_HEAD
           git add build-release.log
           git commit -m "release build log (${GITHUB_SHA})"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/ci-logs --force
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/ci-logs --force || true
+
+      - name: Create issue with build log tail on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "### Build log tail (last 50000 chars)" > issue_body.md
+          echo "" >> issue_body.md
+          tail -c 50000 build-release.log >> issue_body.md
+          jq -n --rawfile body issue_body.md '{"title": "CI release build log (auto)", "body": $body}' > payload.json
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues" \
+            --data @payload.json
 
       - name: Collect APKs
         run: |
