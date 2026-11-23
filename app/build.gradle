@@ -30,6 +30,11 @@ android {
 
     packagingOptions {
         exclude 'META-INF/*'
+        // mapsforge-themes ships its render theme files as jar resources - we bundle them
+        // as proper app assets instead (see src/main/assets), so exclude the jar copies
+        exclude 'assets/mapsforge/**'
+        exclude 'assets/patterns/**'
+        exclude 'assets/symbols/**'
     }
 
     // enable view binding (used by MapsFragment)

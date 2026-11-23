@@ -34,7 +34,7 @@ import java.io.File
 /*
  * OfflineTileProvider class
  */
-class OfflineTileProvider private constructor(context: Context, mapsforgeTileSource: MapsforgeTileSource, mbtilesFile: File?) : MapTileProviderArray(
+class OfflineTileProvider constructor(context: Context, mapsforgeTileSource: MapsforgeTileSource, mbtilesFile: File?) : MapTileProviderArray(
     mapsforgeTileSource,
     SimpleRegisterReceiver(context),
     buildModuleProviders(context, mapsforgeTileSource, mbtilesFile)

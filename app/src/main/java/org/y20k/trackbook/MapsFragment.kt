@@ -19,7 +19,6 @@
 package org.y20k.trackbook
 
 import YesNoDialog
-import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -58,6 +57,13 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(MapsFragment::class.java)
+
+
+    /* Constants */
+    companion object {
+        // Android 13 notification permission (constant not available at compileSdk 32)
+        const val NOTIFICATION_PERMISSION: String = "android.permission.POST_NOTIFICATIONS"
+    }
 
 
     /* Main class variables */
@@ -133,9 +139,10 @@ class MapsFragment : Fragment(), YesNoDialog.YesNoDialogListener {
 
     /* Handles the download button - requests the notification permission on Android 13+ if needed */
     private fun handleDownloadButton() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED) {
+        // Build.VERSION_CODES.TIRAMISU and Manifest.permission.POST_NOTIFICATIONS require compileSdk 33+ - use literals (see Keys)
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(requireContext(), NOTIFICATION_PERMISSION) == PackageManager.PERMISSION_DENIED) {
             // ask for the notification permission first - the download continues afterwards via the observer
-            requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            requestNotificationPermissionLauncher.launch(NOTIFICATION_PERMISSION)
         } else {
             startDownload()
         }
