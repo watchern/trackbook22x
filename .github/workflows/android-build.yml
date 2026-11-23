@@ -22,7 +22,17 @@ jobs:
           java-version: '11'
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-debug.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-build-logs
+          path: build-debug.log
+          if-no-files-found: warn
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
